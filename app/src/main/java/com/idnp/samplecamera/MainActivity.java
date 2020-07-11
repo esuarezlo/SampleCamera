@@ -96,7 +96,43 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private void startCameraCaptureSession() {
+        int largestWidth = 1080;
+        int largestHeight = 2000;
 
+        mImageReader = ImageReader.newInstance(largestWidth, largestHeight, ImageFormat.JPEG, 1);
+
+        mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                try (Image image = reader.acquireNextImage()) {
+                    Image.Plane[] planes = image.getPlanes();
+                    if (planes.length > 0) {
+                        ByteBuffer buffer = planes[0].getBuffer();
+                        byte[] data = new byte[buffer.remaining()];
+                        buffer.get(data);
+                        saveImage(data);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }, null);
+
+        cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+
+        try {
+            cameraId = cameraManager.getCameraIdList()[CAMERAID];
+
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+
+            cameraManager.openCamera(cameraId, cameraDeviceCallback, null);
+            Log.e(TAG, "camera is open");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to open the camera", e);
+        }
 
     }
 
